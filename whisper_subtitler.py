@@ -47,7 +47,7 @@ def extract_audio(video_path):
         logger.error(f"Error extracting audio: {str(e)}")
         raise
 
-def transcribe_audio(audio_path, language='auto', model_name='base', output_language=None):
+def transcribe_audio(audio_path, language='auto', model_name='base', output_language='same'):
     """
     Transcribe audio using Whisper model with optional translation to another language.
     
@@ -173,7 +173,7 @@ def process_file(file_path, language='auto', model='base', format_type='srt', ou
             audio_path, 
             language=language, 
             model_name=model, 
-            output_language=None if output_language == 'same' else output_language
+            output_language=output_language
         )
         
         # Format subtitles

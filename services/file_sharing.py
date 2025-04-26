@@ -280,22 +280,27 @@ class GofileService(FileSharingService):
                         file_info = contents[file_key]
                         
                         if 'link' in file_info:
-                            return file_info['link']
+                            direct_link = file_info['link']
+                            if direct_link:
+                                return direct_link
                     
                     # Look for direct link field
-                    if 'directLink' in content_data:
+                    if 'directLink' in content_data and content_data['directLink']:
                         return content_data['directLink']
                 
-                # If we couldn't find a direct link, return a fallback
-                return f"https://gofile.io/d/{file_id}"
+                # If we couldn't find a direct link, use a fallback
+                fallback_url = f"https://gofile.io/d/{file_id}"
+                logger.warning(f"No direct link found, using fallback URL: {fallback_url}")
+                return fallback_url
                 
             except Exception as e:
                 logger.error(f"Error with content endpoint {base_endpoint}: {str(e)}")
                 continue  # Try the next endpoint
         
         # If we get here, all endpoints failed - return a fallback URL
-        logger.warning(f"All content endpoints failed for file {file_id}, using fallback URL")
-        return f"https://gofile.io/d/{file_id}"
+        fallback_url = f"https://gofile.io/d/{file_id}"
+        logger.warning(f"All content endpoints failed for file {file_id}, using fallback URL: {fallback_url}")
+        return fallback_url
 
 
 # Factory function to get the appropriate file sharing service

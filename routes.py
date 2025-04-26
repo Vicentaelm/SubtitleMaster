@@ -224,7 +224,7 @@ def process_subtitles(task):
             language=task.language,
             model=task.model,
             format_type=task.format_type,
-            output_language=task.output_language if task.output_language != 'same' else None
+            output_language=task.output_language
         )
         
         # Update progress

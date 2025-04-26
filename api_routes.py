@@ -1,7 +1,7 @@
 import logging
 from flask import Blueprint, jsonify, request, session
 from models import SubtitleTask
-from services.file_sharing import get_file_sharing_service
+from services.file_sharing import get_file_sharing_service, GofileService
 from app import db
 
 # Initialize file sharing service
@@ -27,8 +27,11 @@ def ensure_session_id():
 def get_server():
     """Get the best file sharing server for uploads."""
     try:
-        # For Gofile, this gets the best server dynamically
-        server = file_sharing._get_server() if hasattr(file_sharing, '_get_server') else "current"
+        # For Gofile service, try to get the server
+        if isinstance(file_sharing, GofileService):
+            server = file_sharing._get_server()
+        else:
+            server = "current"
         return jsonify({'status': 'success', 'server': server})
     except Exception as e:
         logger.error(f"Error getting file sharing server: {str(e)}")
