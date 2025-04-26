@@ -97,12 +97,22 @@ class GofileService(FileSharingService):
                         
                         # Get the server if response matches expected format
                         if 'data' in data:
+                            server_name = None
                             if 'servers' in data['data'] and isinstance(data['data']['servers'], list):
-                                self.server_url = data['data']['servers'][0]
+                                # For the new API format, extract just the server name
+                                server_info = data['data']['servers'][0]
+                                if isinstance(server_info, dict) and 'name' in server_info:
+                                    server_name = server_info['name']
+                                else:
+                                    server_name = str(server_info)
                             elif 'server' in data['data']:
-                                self.server_url = data['data']['server']
+                                server_name = data['data']['server']
+                                
+                            if server_name:
+                                self.server_url = server_name
+                                self.last_server_fetch = time.time()
+                                logger.info(f"Detected Gofile server: {self.server_url}")
                         
-                        self.last_server_fetch = time.time()
                         break
             except Exception as e:
                 logger.warning(f"Failed to check server endpoint {endpoint}: {str(e)}")
@@ -111,6 +121,11 @@ class GofileService(FileSharingService):
         if not self.working_server_endpoint:
             self.working_server_endpoint = self.server_endpoints[0]
             logger.warning(f"No working server endpoint detected, defaulting to {self.working_server_endpoint}")
+            
+        # If we still don't have a server, use a default one
+        if not self.server_url:
+            self.server_url = "store"
+            logger.warning(f"Using default Gofile server: {self.server_url}")
     
     def _get_server(self) -> str:
         """
@@ -138,14 +153,24 @@ class GofileService(FileSharingService):
                     raise Exception(f"Gofile API error: {data.get('message', 'Unknown error')}")
                 
                 # Parse the server from the response based on format
+                server_name = None
                 if 'data' in data:
                     if 'servers' in data['data'] and isinstance(data['data']['servers'], list):
-                        self.server_url = data['data']['servers'][0]
+                        # For the new API format, extract just the server name
+                        server_info = data['data']['servers'][0]
+                        if isinstance(server_info, dict) and 'name' in server_info:
+                            server_name = server_info['name']
+                        else:
+                            server_name = str(server_info)
                     elif 'server' in data['data']:
-                        self.server_url = data['data']['server']
+                        server_name = data['data']['server']
                 
-                self.last_server_fetch = current_time
-                logger.info(f"Got Gofile server: {self.server_url}")
+                if server_name:
+                    self.server_url = server_name
+                    self.last_server_fetch = current_time
+                    logger.info(f"Got Gofile server: {self.server_url}")
+                else:
+                    raise Exception("Could not parse server information from response")
                 
             except Exception as e:
                 # If we can't get a server, try to redetect endpoints
