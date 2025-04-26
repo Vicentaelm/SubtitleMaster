@@ -11,9 +11,12 @@ from werkzeug.utils import secure_filename
 
 from app import db
 from models import SubtitleTask
-from gofile_api import upload_to_gofile
+from services.file_sharing import get_file_sharing_service
 from whisper_subtitler import process_file, is_ffmpeg_available
 from config import Config
+
+# Initialize file sharing service
+file_sharing = get_file_sharing_service('gofile')
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -115,9 +118,9 @@ def upload_file():
         temp_file = tempfile.mktemp(suffix=os.path.splitext(filename)[1])
         file.save(temp_file)
         
-        # Upload the file to Gofile
-        logger.info(f"Uploading {filename} to Gofile")
-        file_info = upload_to_gofile(temp_file, filename)
+        # Upload the file to file sharing service
+        logger.info(f"Uploading {filename} to file sharing service")
+        file_info = file_sharing.upload_file(temp_file, filename)
         
         # Generate task ID
         task_id = generate_task_id()

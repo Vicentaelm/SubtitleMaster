@@ -28,8 +28,8 @@ def get_gofile_server():
         return server_cache['server']
     
     try:
-        # Make the API request to get the best server
-        response = requests.get(f"{Config.GOFILE_API_URL}/getServer")
+        # Updated API endpoint for getting the best server
+        response = requests.get("https://api.gofile.io/servers")
         response.raise_for_status()
         
         data = response.json()
@@ -38,8 +38,8 @@ def get_gofile_server():
             logger.error(f"Gofile API returned error: {data}")
             raise Exception(f"Gofile API error: {data.get('message', 'Unknown error')}")
         
-        # Cache the server information
-        server_cache['server'] = data['data']['server']
+        # Cache the server information - use the best server from the list
+        server_cache['server'] = data['data']['servers'][0]
         server_cache['timestamp'] = current_time
         
         logger.info(f"Got Gofile server: {server_cache['server']}")
@@ -76,23 +76,27 @@ def upload_to_gofile(file_path, filename=None):
         with open(file_path, 'rb') as f:
             files = {'file': (filename, f)}
             
-            # Make the upload request
+            # Make the upload request - updated URL structure
             logger.info(f"Uploading file {filename} to Gofile")
-            upload_url = f"https://{server}.gofile.io/uploadFile"
-            response = requests.post(upload_url, files=files)
+            upload_url = f"https://{server}.gofile.io/contents/uploadfile"
+            
+            # Updated to use the token parameter (empty for anonymous uploads)
+            data = {"token": ""}
+            
+            response = requests.post(upload_url, files=files, data=data)
             response.raise_for_status()
             
-            data = response.json()
+            result = response.json()
             
-            if data['status'] != 'ok':
-                logger.error(f"Gofile upload API returned error: {data}")
-                raise Exception(f"Gofile upload error: {data.get('message', 'Unknown error')}")
+            if result['status'] != 'ok':
+                logger.error(f"Gofile upload API returned error: {result}")
+                raise Exception(f"Gofile upload error: {result.get('message', 'Unknown error')}")
             
-            # Return file info
+            # Return file info with updated structure
             file_info = {
-                'fileId': data['data']['fileId'],
-                'fileName': data['data']['fileName'],
-                'downloadPage': data['data']['downloadPage']
+                'fileId': result['data']['fileId'],
+                'fileName': result['data']['fileName'],
+                'downloadPage': f"https://gofile.io/d/{result['data']['fileId']}"
             }
             
             logger.info(f"File uploaded successfully: {file_info['fileId']}")
@@ -116,9 +120,9 @@ def get_gofile_content(file_id):
         dict: File content information
     """
     try:
-        # Make the API request to get content info
-        content_url = f"{Config.GOFILE_API_URL}/getContent"
-        response = requests.get(content_url, params={'contentId': file_id})
+        # Updated API endpoint for getting content info
+        content_url = "https://api.gofile.io/contents"
+        response = requests.get(f"{content_url}/{file_id}")
         response.raise_for_status()
         
         data = response.json()
@@ -150,18 +154,26 @@ def get_direct_download_url(file_id):
         # Get content info
         content_info = get_gofile_content(file_id)
         
-        # Extract file information
-        contents = content_info.get('contents', {})
-        
-        if not contents:
+        # Updated structure to access file information
+        if not content_info:
             raise Exception(f"No content found for file ID: {file_id}")
         
-        # Get the first file in the contents (assuming single file upload)
-        file_key = next(iter(contents))
-        file_info = contents[file_key]
-        
-        # Return the direct link
-        return file_info.get('link')
+        # Check if there are contents or children in the response
+        if 'contents' in content_info:
+            contents = content_info['contents']
+            
+            if not contents:
+                raise Exception(f"No files found for file ID: {file_id}")
+            
+            # Get the first file in the contents
+            file_key = next(iter(contents))
+            file_info = contents[file_key]
+            
+            # Return the direct link
+            return file_info.get('link')
+        else:
+            # For newer API versions, the downloadPage might be the direct URL
+            return f"https://gofile.io/d/{file_id}"
         
     except Exception as e:
         logger.error(f"Error getting direct download URL: {str(e)}")
