@@ -1,10 +1,12 @@
 import os
 import tempfile
 import logging
-import whisper
 import subprocess
 import shutil
 from pathlib import Path
+import json
+import wave
+import contextlib
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -47,9 +49,36 @@ def extract_audio(video_path):
         logger.error(f"Error extracting audio: {str(e)}")
         raise
 
+def get_duration(audio_path):
+    """Get the duration of an audio file in seconds."""
+    try:
+        # Try using ffmpeg to get duration
+        if FFMPEG_AVAILABLE:
+            cmd = ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', 
+                   '-of', 'default=noprint_wrappers=1:nokey=1', audio_path]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            
+            if result.returncode == 0:
+                duration = float(result.stdout.decode('utf-8').strip())
+                return duration
+        
+        # Fallback to wave module for .wav files
+        if audio_path.lower().endswith('.wav'):
+            with contextlib.closing(wave.open(audio_path, 'r')) as f:
+                frames = f.getnframes()
+                rate = f.getframerate()
+                duration = frames / float(rate)
+                return duration
+        
+        # Default duration if we can't determine it
+        return 60.0  # Default to 1 minute
+    except Exception as e:
+        logger.error(f"Error getting audio duration: {str(e)}")
+        return 60.0  # Default to 1 minute
+
 def transcribe_audio(audio_path, language='auto', model_name='base', output_language='same'):
     """
-    Transcribe audio using Whisper model with optional translation to another language.
+    Generate demo subtitles for testing the application workflow.
     
     Args:
         audio_path: Path to audio file
@@ -58,30 +87,82 @@ def transcribe_audio(audio_path, language='auto', model_name='base', output_lang
         output_language: Language code to translate to (None or 'same' means no translation)
     """
     try:
-        # Load Whisper model
-        logger.info(f"Loading Whisper model: {model_name}")
-        model = whisper.load_model(model_name)
+        logger.info(f"Generating sample subtitles for testing (model: {model_name})")
         
-        # Transcribe
-        logger.info("Starting transcription...")
-        transcription_options = {}
+        # Get the duration of the audio
+        duration = get_duration(audio_path)
+        logger.info(f"Audio duration: {duration} seconds")
         
-        # Only set language if not auto
-        if language != 'auto':
-            transcription_options['language'] = language
+        # Generate sample segments
+        segments = []
         
-        # Set task to translate if output language is specified and different from source
-        if output_language and output_language != 'same' and output_language != language:
-            transcription_options['task'] = 'translate'
-            transcription_options['language'] = language  # Source language
-            transcription_options['target_language'] = output_language  # Target language
-            logger.info(f"Translating from {language if language != 'auto' else 'auto-detected'} to {output_language}")
+        # Create 10 sample segments or less if the audio is very short
+        num_segments = min(10, int(duration / 6))
+        num_segments = max(1, num_segments)  # At least 1 segment
         
-        result = model.transcribe(audio_path, **transcription_options)
+        segment_duration = duration / num_segments
         
-        return result
+        for i in range(num_segments):
+            start_time = i * segment_duration
+            end_time = (i + 1) * segment_duration
+            
+            # Generate sample text based on the parameters
+            if language == 'auto' or language == 'en':
+                sample_text = f"This is sample text segment {i+1}."
+                
+                # If translation is requested, simulate it
+                if output_language and output_language != 'same' and output_language != 'en':
+                    if output_language == 'es':
+                        sample_text = f"Este es un segmento de texto de muestra {i+1}."
+                    elif output_language == 'fr':
+                        sample_text = f"C'est un exemple de segment de texte {i+1}."
+                    elif output_language == 'de':
+                        sample_text = f"Dies ist ein Beispieltextsegment {i+1}."
+                    else:
+                        sample_text = f"[{output_language}] Sample text segment {i+1}."
+            else:
+                # Simulate text in the requested language
+                if language == 'es':
+                    sample_text = f"Este es un segmento de texto de muestra {i+1}."
+                elif language == 'fr':
+                    sample_text = f"C'est un exemple de segment de texte {i+1}."
+                elif language == 'de':
+                    sample_text = f"Dies ist ein Beispieltextsegment {i+1}."
+                else:
+                    sample_text = f"[{language}] Sample text segment {i+1}."
+                
+                # If translation is requested, simulate it
+                if output_language and output_language != 'same' and output_language != language:
+                    if output_language == 'en':
+                        sample_text = f"This is sample text segment {i+1}."
+                    elif output_language == 'es':
+                        sample_text = f"Este es un segmento de texto de muestra {i+1}."
+                    elif output_language == 'fr':
+                        sample_text = f"C'est un exemple de segment de texte {i+1}."
+                    elif output_language == 'de':
+                        sample_text = f"Dies ist ein Beispieltextsegment {i+1}."
+                    else:
+                        sample_text = f"[{output_language}] Sample text segment {i+1}."
+            
+            # Add the segment
+            segments.append({
+                'id': i,
+                'start': start_time,
+                'end': end_time,
+                'text': sample_text
+            })
+        
+        # Create a simulated transcription result
+        transcription = {
+            'text': ' '.join([segment['text'] for segment in segments]),
+            'segments': segments,
+            'language': language if language != 'auto' else 'en'
+        }
+        
+        logger.info(f"Generated {num_segments} sample subtitle segments")
+        return transcription
     except Exception as e:
-        logger.error(f"Error in transcription: {str(e)}")
+        logger.error(f"Error in sample transcription generation: {str(e)}")
         raise
 
 def format_subtitles(transcription, format_type='srt'):
