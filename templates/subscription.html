@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Plans - Whisper Subtitler{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Subscription Plans</h1>
+    
+    {% if is_paid %}
+    <div class="alert alert-success mb-4">
+        <h4 class="alert-heading">Pro Plan Active</h4>
+        <p>You are currently on the <strong>Pro Plan</strong>. Thank you for your support!</p>
+    </div>
+    {% endif %}
+    
+    <div class="row mb-5">
+        <!-- Free Plan Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h3 class="my-0 text-center">Free Plan</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="card-title text-center mb-4">$0<small class="text-muted">/month</small></h1>
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li class="mb-2"><i class="bi bi-check"></i> File uploads up to {{ free_max_file_size|int }} MB</li>
+                        <li class="mb-2"><i class="bi bi-check"></i> {{ free_max_tasks_per_day }} tasks per day</li>
+                        <li class="mb-2"><i class="bi bi-check"></i> Basic subtitle generation</li>
+                        <li class="mb-2"><i class="bi bi-x text-muted"></i> <span class="text-muted">Large file support</span></li>
+                        <li class="mb-2"><i class="bi bi-x text-muted"></i> <span class="text-muted">Unlimited daily tasks</span></li>
+                    </ul>
+                    {% if is_paid %}
+                    <button class="btn btn-outline-secondary w-100" disabled>Current Plan</button>
+                    {% else %}
+                    <button class="btn btn-outline-secondary w-100" disabled>Current Plan</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pro Plan Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="my-0 text-center">Pro Plan</h3>
+                </div>
+                <div class="card-body">
+                    <h1 class="card-title text-center mb-4">${{ subscription_price }}<small class="text-muted">/month</small></h1>
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li class="mb-2"><i class="bi bi-check"></i> File uploads up to {{ paid_max_file_size|int }} MB</li>
+                        <li class="mb-2"><i class="bi bi-check"></i> {{ paid_max_tasks_per_day }} tasks per day</li>
+                        <li class="mb-2"><i class="bi bi-check"></i> Advanced subtitle generation</li>
+                        <li class="mb-2"><i class="bi bi-check"></i> Priority processing</li>
+                        <li class="mb-2"><i class="bi bi-check"></i> Email support</li>
+                    </ul>
+                    {% if is_paid %}
+                    <button class="btn btn-success w-100" disabled>Already Subscribed</button>
+                    {% else %}
+                    <!-- PayPal Button Container -->
+                    <div id="paypal-button-container" class="mt-3"></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="my-4">Frequently Asked Questions</h2>
+
+    <div class="accordion" id="faqAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    What happens when I upgrade to Pro?
+                </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    When you upgrade to the Pro plan, you'll immediately gain access to all Pro features. This includes the ability to upload larger files (up to {{ paid_max_file_size|int }} MB), unlimited tasks per day, and priority processing.
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingTwo">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                    How is my payment processed?
+                </button>
+            </h2>
+            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    All payments are securely processed through PayPal. Your payment information is never stored on our servers. You can manage your subscription directly through your PayPal account.
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingThree">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                    Can I cancel my subscription?
+                </button>
+            </h2>
+            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                    Yes, you can cancel your subscription at any time. After cancellation, you'll continue to have Pro access until the end of your current billing period. To cancel, simply login to your PayPal account and cancel the subscription there.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if not is_paid %}
+<!-- PayPal SDK -->
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency={{ currency }}"></script>
+<script>
+  paypal.Buttons({
+    style: {
+      layout: 'vertical',
+      color:  'blue',
+      shape:  'rect',
+      label:  'subscribe'
+    },
+    createSubscription: function(data, actions) {
+      return actions.subscription.create({
+        'plan_id': 'P-12345678901234567ABCDEFG', // Replace with your actual PayPal plan ID
+      });
+    },
+    onApprove: function(data, actions) {
+      // Redirect to success page with subscription info
+      window.location.href = "/subscription/success?subscription_id=" + data.subscriptionID + "&payer_id=" + data.payerID;
+    }
+  }).render('#paypal-button-container');
+</script>
+{% endif %}
+{% endblock %}

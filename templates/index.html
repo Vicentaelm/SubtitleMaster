@@ -5,6 +5,31 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
+        <!-- Plan Information -->
+        <div class="card bg-dark border-secondary shadow mb-4">
+            <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Your Plan: {{ plan_name }}</h4>
+                <a href="{{ url_for('main.subscription') }}" class="btn btn-outline-primary btn-sm">
+                    {% if plan_name == 'Free' %}Upgrade{% else %}Manage Subscription{% endif %}
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Max File Size:</strong> {{ max_file_size|int }} MB</p>
+                        <p class="mb-1"><strong>Daily Tasks:</strong> {{ max_tasks_per_day }}</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        {% if plan_name == 'Free' %}
+                        <p class="text-muted">Need to process larger files?</p>
+                        <a href="{{ url_for('main.subscription') }}" class="btn btn-sm btn-primary">Upgrade to Pro</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Card -->
         <div class="card bg-dark border-secondary shadow">
             <div class="card-header bg-dark border-secondary">
                 <h2 class="mb-0">Generate Subtitles</h2>
@@ -13,10 +38,18 @@
                 <p class="lead">Upload a video or audio file to generate subtitles using OpenAI's Whisper model.</p>
                 
                 <form action="{{ url_for('main.upload_file') }}" method="post" enctype="multipart/form-data" id="upload-form">
+                    <!-- Email field for paid users verification -->
+                    <div class="mb-3">
+                        <label for="user_email" class="form-label">Email (optional)</label>
+                        <input type="email" class="form-control" id="user_email" name="user_email" 
+                               placeholder="Enter your email if you have a paid subscription">
+                        <div class="form-text">If you have a Pro subscription, enter your email to access your benefits</div>
+                    </div>
+                    
                     <div class="mb-4">
                         <label for="file" class="form-label">Select video/audio file</label>
                         <input type="file" class="form-control" id="file" name="file" required>
-                        <div class="form-text">Supported formats: MP4, MP3, WAV, AVI, MOV, MKV, FLAC, OGG, M4A (max 512MB)</div>
+                        <div class="form-text">Supported formats: MP4, MP3, WAV, AVI, MOV, MKV, FLAC, OGG, M4A (max {{ max_file_size|int }}MB for your plan)</div>
                     </div>
 
                     <div class="row mb-3">
