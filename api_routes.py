@@ -1,8 +1,11 @@
 import logging
 from flask import Blueprint, jsonify, request, session
 from models import SubtitleTask
-from gofile_api import get_gofile_server, get_direct_download_url
+from services.file_sharing import get_file_sharing_service
 from app import db
+
+# Initialize file sharing service
+file_sharing = get_file_sharing_service('gofile')
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -22,23 +25,24 @@ def ensure_session_id():
 # API Routes
 @api_bp.route('/server', methods=['GET'])
 def get_server():
-    """Get the best Gofile server for uploads."""
+    """Get the best file sharing server for uploads."""
     try:
-        server = get_gofile_server()
+        # For Gofile, this gets the best server dynamically
+        server = file_sharing._get_server() if hasattr(file_sharing, '_get_server') else "current"
         return jsonify({'status': 'success', 'server': server})
     except Exception as e:
-        logger.error(f"Error getting Gofile server: {str(e)}")
+        logger.error(f"Error getting file sharing server: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @api_bp.route('/direct-link', methods=['GET'])
 def get_direct_link():
-    """Get a direct download link for a Gofile file ID."""
+    """Get a direct download link for a file ID."""
     try:
         file_id = request.args.get('id')
         if not file_id:
             return jsonify({'status': 'error', 'message': 'No file ID provided'}), 400
         
-        direct_url = get_direct_download_url(file_id)
+        direct_url = file_sharing.get_direct_download_url(file_id)
         if not direct_url:
             return jsonify({'status': 'error', 'message': 'Could not get direct download URL'}), 404
         

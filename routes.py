@@ -197,11 +197,11 @@ def process_subtitles(task):
         temp_dir = tempfile.mkdtemp()
         input_file = os.path.join(temp_dir, task.original_filename)
         
-        # Download the file from Gofile (For simplicity, we'll use requests directly)
-        from gofile_api import get_direct_download_url
+        # Download the file from file sharing service
         import requests
         
-        direct_url = get_direct_download_url(task.input_gofile_id)
+        # Get direct download URL from file sharing service
+        direct_url = file_sharing.get_direct_download_url(task.input_gofile_id)
         
         # Update progress
         task.progress = 'Downloading media file...'
@@ -235,8 +235,8 @@ def process_subtitles(task):
         filename_base = os.path.splitext(task.original_filename)[0]
         subtitle_filename = f"{filename_base}.{task.format_type}"
         
-        # Upload subtitle file to Gofile
-        subtitle_info = upload_to_gofile(subtitle_path, subtitle_filename)
+        # Upload subtitle file to file sharing service
+        subtitle_info = file_sharing.upload_file(subtitle_path, subtitle_filename)
         
         # Update task with the results
         task.status = 'completed'
