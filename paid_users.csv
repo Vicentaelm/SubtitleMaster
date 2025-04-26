@@ -1,0 +1,4 @@
+email,subscription_end_date,subscription_type
+john.doe@example.com,2025-12-31,monthly
+jane.smith@example.com,2025-12-31,annual
+test@example.com,2025-12-31,monthly

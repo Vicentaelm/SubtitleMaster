@@ -14,6 +14,7 @@ from models import SubtitleTask
 from services.file_sharing import get_file_sharing_service
 from whisper_subtitler import process_file, is_ffmpeg_available
 from config import Config
+from plan_manager import PlanManager
 
 # Initialize file sharing service
 file_sharing = get_file_sharing_service('gofile')
