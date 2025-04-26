@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Whisper Subtitler - Generate Subtitles from Videos{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card bg-dark border-secondary shadow">
+            <div class="card-header bg-dark border-secondary">
+                <h2 class="mb-0">Generate Subtitles</h2>
+            </div>
+            <div class="card-body">
+                <p class="lead">Upload a video or audio file to generate subtitles using OpenAI's Whisper model.</p>
+                
+                <form action="{{ url_for('main.upload_file') }}" method="post" enctype="multipart/form-data" id="upload-form">
+                    <div class="mb-4">
+                        <label for="file" class="form-label">Select video/audio file</label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                        <div class="form-text">Supported formats: MP4, MP3, WAV, AVI, MOV, MKV, FLAC, OGG, M4A (max 512MB)</div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="language" class="form-label">Source language</label>
+                            <select class="form-select" id="language" name="language">
+                                {% for lang in languages %}
+                                <option value="{{ lang.code }}" {% if lang.code == 'auto' %}selected{% endif %}>{{ lang.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select "Auto-detect" to automatically detect the language</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="output_language" class="form-label">Translate to (optional)</label>
+                            <select class="form-select" id="output_language" name="output_language">
+                                {% for lang in languages %}
+                                {% if lang.code != 'auto' %}
+                                <option value="{{ lang.code }}" {% if lang.code == 'same' %}selected{% endif %}>{{ lang.name }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select "Same as input" to keep the original language</div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="model" class="form-label">Model size</label>
+                            <select class="form-select" id="model" name="model">
+                                {% for model_name in models %}
+                                <option value="{{ model_name }}" {% if model_name == default_model %}selected{% endif %}>{{ model_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Larger models are more accurate but slower</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="format" class="form-label">Output format</label>
+                            <select class="form-select" id="format" name="format">
+                                {% for format_name in formats %}
+                                <option value="{{ format_name }}" {% if format_name == 'srt' %}selected{% endif %}>{{ format_name|upper }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">SRT is the most widely supported format</div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="upload-button">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="upload-spinner"></span>
+                            <span id="upload-button-text">Generate Subtitles</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Features section -->
+        <div class="mt-5">
+            <h3 class="mb-4">Features</h3>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card h-100 bg-dark border-secondary">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-translate"></i> Multilingual Support</h5>
+                            <p class="card-text">Automatically detect the language or specify the source language. Translate subtitles to different languages.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 bg-dark border-secondary">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-pen"></i> Subtitle Editor</h5>
+                            <p class="card-text">Edit generated subtitles directly in your browser. Adjust timings, edit text, and preview changes in real-time.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 bg-dark border-secondary">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-camera-video"></i> Video Preview</h5>
+                            <p class="card-text">Preview your video with generated subtitles to ensure perfect synchronization before downloading.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 bg-dark border-secondary">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-cloud-download"></i> Easy Downloads</h5>
+                            <p class="card-text">Download subtitles in multiple formats (SRT, VTT, TXT) that work with most video players.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('upload-form');
+        const button = document.getElementById('upload-button');
+        const spinner = document.getElementById('upload-spinner');
+        const buttonText = document.getElementById('upload-button-text');
+        
+        form.addEventListener('submit', function() {
+            // Show loading state
+            button.disabled = true;
+            spinner.classList.remove('d-none');
+            buttonText.textContent = 'Uploading...';
+        });
+    });
+</script>
+{% endblock %}

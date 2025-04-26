@@ -1,0 +1,57 @@
+/* 
+ * Custom styles for Whisper Subtitler
+ */
+
+/* General styles */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+footer {
+    margin-top: auto;
+}
+
+/* Task status page */
+.progress-bar-animated {
+    animation-duration: 1.5s;
+}
+
+/* Results page */
+.subtitle-editor-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid var(--bs-secondary);
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.subtitle-item {
+    border-bottom: 1px solid var(--bs-secondary);
+    padding: 0.5rem 0;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.subtitle-text {
+    resize: vertical;
+}
+
+/* Video preview */
+#video-container {
+    background-color: #000;
+    position: relative;
+    border-radius: 0.25rem;
+    overflow: hidden;
+}
+
+#preview-video {
+    width: 100%;
+    display: block;
+}

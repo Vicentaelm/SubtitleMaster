@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Task Status - Whisper Subtitler{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card bg-dark border-secondary shadow">
+            <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Task Status</h2>
+                <a href="{{ url_for('main.tasks_list') }}" class="btn btn-outline-secondary btn-sm">View All Tasks</a>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h3 class="fs-4">File: {{ task.original_filename }}</h3>
+                    <p class="text-muted mb-0">Task ID: {{ task.task_id }}</p>
+                    <p class="text-muted">Created: {{ task.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                </div>
+
+                <div class="alert {% if task.status == 'completed' %}alert-success{% elif task.status == 'failed' %}alert-danger{% else %}alert-info{% endif %}">
+                    <h5 class="alert-heading">Status: {{ task.status|capitalize }}</h5>
+                    <p class="mb-0">
+                        {% if task.status == 'pending' %}
+                            Waiting for processing to begin...
+                        {% elif task.status == 'processing' %}
+                            {{ task.progress or 'Processing your file...' }}
+                        {% elif task.status == 'completed' %}
+                            Subtitles generation completed successfully!
+                        {% elif task.status == 'failed' %}
+                            Error: {{ task.message or 'An unknown error occurred during processing.' }}
+                        {% endif %}
+                    </p>
+                </div>
+
+                {% if task.status == 'processing' %}
+                <div class="mb-4">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mb-4">
+                    <h5>Processing Options</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush bg-transparent">
+                                <li class="list-group-item bg-dark">Source Language: {{ task.language if task.language != 'auto' else 'Auto-detect' }}</li>
+                                <li class="list-group-item bg-dark">Output Language: {{ task.output_language if task.output_language != 'same' else 'Same as input' }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item bg-dark">Model: {{ task.model }}</li>
+                                <li class="list-group-item bg-dark">Format: {{ task.format_type|upper }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    {% if task.status == 'completed' %}
+                        <a href="{{ url_for('main.result', task_id=task.task_id) }}" class="btn btn-primary">View Results</a>
+                    {% elif task.status == 'failed' %}
+                        <a href="{{ url_for('main.index') }}" class="btn btn-primary">Try Again</a>
+                    {% else %}
+                        <button type="button" class="btn btn-secondary" disabled>Processing...</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if task.status not in ['completed', 'failed'] %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Poll for status updates
+        function checkStatus() {
+            fetch('/api/tasks/{{ task.task_id }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const task = data.task;
+                        if (task.status !== '{{ task.status }}' || task.progress !== '{{ task.progress }}') {
+                            // Reload the page if the status changed
+                            window.location.reload();
+                        }
+                    }
+                })
+                .catch(error => console.error('Error checking status:', error));
+        }
+
+        // Check status every 3 seconds
+        const statusInterval = setInterval(checkStatus, 3000);
+
+        // Clean up interval when navigating away
+        window.addEventListener('beforeunload', function() {
+            clearInterval(statusInterval);
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

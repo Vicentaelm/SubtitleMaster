@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block title %}Results - Whisper Subtitler{% endblock %}
+
+{% block head %}
+<style>
+    .subtitle-editor-container {
+        height: 500px;
+        overflow-y: auto;
+    }
+    .subtitle-item {
+        border-bottom: 1px solid var(--bs-secondary);
+        padding: 10px 0;
+    }
+    .time-input {
+        width: 130px;
+    }
+    .video-preview-container {
+        position: relative;
+        background-color: #000;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .video-controls {
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card bg-dark border-secondary shadow mb-4">
+            <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Subtitles for {{ task.original_filename }}</h2>
+                <div>
+                    <a href="{{ url_for('main.tasks_list') }}" class="btn btn-outline-secondary btn-sm me-2">View All Tasks</a>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-sm">New Task</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <h5 class="alert-heading">Processing Completed Successfully!</h5>
+                    <p class="mb-0">Your subtitles are ready. You can preview, edit, and download them below.</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Processing Details</h5>
+                        <ul class="list-group list-group-flush mb-4">
+                            <li class="list-group-item bg-dark d-flex justify-content-between">
+                                <span>Model:</span>
+                                <span class="text-end">{{ task.model }}</span>
+                            </li>
+                            <li class="list-group-item bg-dark d-flex justify-content-between">
+                                <span>Source Language:</span>
+                                <span class="text-end">{{ task.language if task.language != 'auto' else 'Auto-detect' }}</span>
+                            </li>
+                            <li class="list-group-item bg-dark d-flex justify-content-between">
+                                <span>Output Language:</span>
+                                <span class="text-end">{{ task.output_language if task.output_language != 'same' else 'Same as input' }}</span>
+                            </li>
+                            <li class="list-group-item bg-dark d-flex justify-content-between">
+                                <span>Format:</span>
+                                <span class="text-end">{{ task.format_type|upper }}</span>
+                            </li>
+                            <li class="list-group-item bg-dark d-flex justify-content-between">
+                                <span>Processing Time:</span>
+                                <span class="text-end">{{ (task.completed_at - task.created_at).total_seconds()|round(1) }} seconds</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Download Options</h5>
+                        <div class="card bg-dark mb-4">
+                            <div class="card-body">
+                                <div class="d-grid gap-3">
+                                    <a href="{{ task.subtitle_gofile_link }}" id="download-subtitles" class="btn btn-success" target="_blank">
+                                        <i class="bi bi-download"></i> Download {{ task.format_type|upper }} Subtitles
+                                    </a>
+                                    <button id="save-edited-subtitles" class="btn btn-outline-primary">
+                                        <i class="bi bi-save"></i> Save Edited Subtitles
+                                    </button>
+                                    <a href="{{ task.input_gofile_link }}" class="btn btn-outline-secondary" target="_blank">
+                                        <i class="bi bi-file-earmark-play"></i> Download Original File
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs for Video Preview and Subtitle Editor -->
+                <ul class="nav nav-tabs" id="resultTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="video-tab" data-bs-toggle="tab" data-bs-target="#video-preview" type="button" role="tab">
+                            Video Preview
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="editor-tab" data-bs-toggle="tab" data-bs-target="#subtitle-editor" type="button" role="tab">
+                            Subtitle Editor
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content pt-4" id="resultTabsContent">
+                    <!-- Video Preview Tab -->
+                    <div class="tab-pane fade show active" id="video-preview" role="tabpanel" aria-labelledby="video-tab">
+                        <div class="row">
+                            <div class="col-lg-8 offset-lg-2">
+                                <div class="video-preview-container" id="video-container">
+                                    <video id="preview-video" class="w-100" controls>
+                                        <source id="video-source" type="video/mp4">
+                                        <track id="subtitle-track" kind="subtitles" srclang="en" label="Subtitles" default>
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                                <div class="video-controls text-center">
+                                    <div class="form-check form-switch d-inline-block me-3">
+                                        <input class="form-check-input" type="checkbox" id="toggle-subtitles" checked>
+                                        <label class="form-check-label" for="toggle-subtitles">Show Subtitles</label>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info mt-3">
+                                    <i class="bi bi-info-circle"></i> Loading video preview... This may take a moment.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subtitle Editor Tab -->
+                    <div class="tab-pane fade" id="subtitle-editor" role="tabpanel" aria-labelledby="editor-tab">
+                        <div class="row">
+                            <div class="col-lg-10 offset-lg-1">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5>Edit Subtitles</h5>
+                                        <div>
+                                            <button id="add-subtitle" class="btn btn-sm btn-outline-success me-2">
+                                                <i class="bi bi-plus-circle"></i> Add
+                                            </button>
+                                            <button id="apply-changes" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-check-circle"></i> Apply to Video
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted small">Edit the subtitle text and timing below. Changes will be saved when you click "Save Edited Subtitles".</p>
+                                </div>
+
+                                <div class="subtitle-editor-container" id="subtitle-editor-container">
+                                    <div class="text-center py-5">
+                                        <div class="spinner-border" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-3">Loading subtitles...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/subtitle-editor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/video-preview.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize with video and subtitle URLs
+        const videoUrl = "{{ task.input_gofile_link }}";
+        const subtitleUrl = "{{ task.subtitle_gofile_link }}";
+        const subtitleFormat = "{{ task.format_type }}";
+        const subtitleFilename = "{{ task.subtitle_filename }}";
+        
+        // Initialize video preview
+        initVideoPreview(videoUrl, subtitleUrl);
+        
+        // Initialize subtitle editor
+        initSubtitleEditor(subtitleUrl, subtitleFormat, subtitleFilename);
+        
+        // Handle save button click
+        document.getElementById('save-edited-subtitles').addEventListener('click', function() {
+            saveSubtitleChanges();
+        });
+        
+        // Handle apply changes button click
+        document.getElementById('apply-changes').addEventListener('click', function() {
+            updateVideoSubtitles();
+        });
+        
+        // Handle subtitle visibility toggle
+        document.getElementById('toggle-subtitles').addEventListener('change', function() {
+            const track = document.getElementById('subtitle-track');
+            if (track) {
+                if (this.checked) {
+                    track.mode = 'showing';
+                } else {
+                    track.mode = 'hidden';
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

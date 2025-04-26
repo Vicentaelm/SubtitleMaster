@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark background circle -->
+  <circle cx="50" cy="50" r="48" fill="#1e1e1e" stroke="#6c757d" stroke-width="2"/>
+  
+  <!-- Sound waves -->
+  <path d="M30,50 Q40,30 50,50 Q60,70 70,50" fill="none" stroke="#0d6efd" stroke-width="3" stroke-linecap="round"/>
+  <path d="M25,50 Q37.5,20 50,50 Q62.5,80 75,50" fill="none" stroke="#0d6efd" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <path d="M20,50 Q35,10 50,50 Q65,90 80,50" fill="none" stroke="#0d6efd" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+  
+  <!-- Subtitle text representation -->
+  <rect x="20" y="65" width="60" height="6" rx="2" fill="#f8f9fa" opacity="0.9"/>
+  <rect x="30" y="75" width="40" height="6" rx="2" fill="#f8f9fa" opacity="0.7"/>
+  
+  <!-- Microphone icon -->
+  <rect x="45" y="30" width="10" height="20" rx="5" fill="#f8f9fa"/>
+  <path d="M38,45 Q38,55 50,55 Q62,55 62,45" fill="none" stroke="#f8f9fa" stroke-width="3" stroke-linecap="round"/>
+  <line x1="50" y1="55" x2="50" y2="62" stroke="#f8f9fa" stroke-width="3" stroke-linecap="round"/>
+</svg>
