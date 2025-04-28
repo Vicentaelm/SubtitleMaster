@@ -64,9 +64,10 @@ def create_app():
     
     return app
     @app.route('/')
-def home():
+    def home():
     return "Hello, world!"
 
 # Ensure it listens on the correct port when running
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
