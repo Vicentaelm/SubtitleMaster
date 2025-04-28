@@ -63,11 +63,14 @@ def create_app():
         db.create_all()
     
     return app
-    @app.route('/')
-    def home():
+
+
+# Create the application instance
+app = create_app()
+@app.route('/')
+def home():
     return "Hello, world!"
 
-# Ensure it listens on the correct port when running
+# Code to ensure it listens on the right port
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-
